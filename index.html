@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kolb 四種學習風格｜自編教學測驗</title>
+<style>
+:root{color-scheme:light;--ink:#192a30;--muted:#466066;--accent:#125b50;--paper:#fffdf8;--edge:#cbdad3}
+*{box-sizing:border-box}
+body{margin:0;background:#edf4ef;color:var(--ink);font:16px/1.6 system-ui,"PingFang TC","Microsoft JhengHei",sans-serif;overflow-wrap:anywhere}
+main,footer{width:min(100% - 2rem, 52rem);margin:auto}
+header{padding:2.7rem 0 1.25rem;border-bottom:1px solid var(--edge);margin-bottom:1.25rem}
+h1,h2,h3,p{margin:0 0 .7rem}
+h1{font-size:clamp(1.85rem,6vw,3rem);line-height:1.15;letter-spacing:-.03em}
+h2{font-size:1.4rem;line-height:1.35}
+h3{font-size:1.08rem}
+.kicker{color:var(--accent);font-weight:750;font-size:.88rem;letter-spacing:.1em}
+section{border:1px solid var(--edge);border-radius:1.2rem;padding:clamp(1rem,4vw,2rem);background:var(--paper)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+.mode{text-align:left;display:block;padding:1rem;width:100%}
+.mode strong,.mode span{display:block}
+.mode span{font-weight:400;font-size:.9rem;margin-top:.3rem}
+button{font:inherit;font-weight:700;color:var(--accent);background:#f1f8f3;border:1px solid #86a69c;border-radius:.65rem;min-height:44px;padding:.45rem .85rem;cursor:pointer;touch-action:manipulation}
+button.primary,.rank[aria-pressed="true"]{background:var(--accent);color:white;border-color:var(--accent)}
+button:disabled{opacity:.48;cursor:default}
+button:focus-visible,[tabindex="-1"]:focus-visible{outline:3px solid #a85323;outline-offset:3px}
+nav{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+.meta,.help,footer{color:var(--muted)}
+.meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.25rem 1rem;font-size:.9rem;font-weight:700}
+progress{width:100%;height:.65rem;display:block;accent-color:var(--accent);margin:.45rem 0 1rem}
+.option{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.55rem;padding:.65rem 0;border-bottom:1px solid var(--edge)}
+.option:last-child{border-bottom:0}
+.ranks{display:grid;grid-template-columns:repeat(4,minmax(44px,1fr));gap:.3rem}
+.rank{padding:.2rem}
+.notice{border-left:4px solid #b26836;padding:.55rem .75rem;background:#fbefe1}
+.notice:empty{display:none}
+.score{border:1px solid var(--edge);padding:.6rem .8rem;border-radius:.65rem}
+.score b{display:block;font-size:1.4rem}
+figure{margin:1rem 0}
+svg{display:block;width:min(100%,30rem);height:auto;margin:auto}
+figcaption{font-size:.9rem;color:var(--muted)}
+summary{cursor:pointer;min-height:44px;display:list-item;padding:.55rem 0;font-weight:700}
+footer{padding:1.25rem 0 2rem;font-size:.9rem}
+[hidden]{display:none!important}
+@media(max-width:560px){.option{grid-template-columns:1fr}.modes{grid-template-columns:1fr}header{padding-top:1.6rem}}
+@media print{
+  @page{margin:12mm}
+  body{background:white;font-size:10pt}
+  main,footer{width:100%}
+  header{padding:0;margin:0 0 .5rem}
+  h1{font-size:20pt}
+  section{border:0;padding:0;background:white}
+  nav,details{display:none!important}
+  svg{width:76mm}
+  figure,.score{break-inside:avoid}
+  footer{padding:.4rem 0 0}
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+<p class="kicker">自編教學測驗</p>
+<h1>Kolb 四種學習風格</h1>
+<p class="help">從日常學習情境探索自己的相對偏好。</p>
+</header>
+<noscript><p class="notice">此測驗需要 JavaScript。若目前是檔案預覽，請改用能執行網頁程式的瀏覽器開啟。</p></noscript>
+<section id="home" aria-labelledby="home-title">
+<h2 id="home-title" tabindex="-1">選擇測驗版本</h2>
+<p>每版 12 題。依照你平常的學習方式，將每題四個敘述排序。4 分最符合，1 分最不符合。</p>
+<div class="grid modes">
+<button class="mode" data-mode="0"><strong>非護理專業</strong><span>課堂、專題與團隊活動</span></button>
+<button class="mode" data-mode="1"><strong>護理專業</strong><span>護理技能、臨床案例與模擬</span></button>
+</div>
+</section>
+<section id="quiz" hidden aria-labelledby="question">
+<div class="meta"><span id="position"></span><span id="answered" aria-live="polite"></span></div>
+<progress id="progress" max="12" value="0" aria-label="已完成題數"></progress>
+<h2 id="question" tabindex="-1"></h2>
+<p class="help">4 最符合 · 3 次符合 · 2 較不符合 · 1 最不符合。每分限用一次。再按已選分數可取消。</p>
+<div id="options"></div>
+<p id="feedback" class="notice" role="status"></p>
+<nav aria-label="測驗操作">
+<button id="back">上一題</button>
+<button id="next" class="primary">下一題</button>
+<button id="clear">清除本題</button>
+<button id="leave">回版本選擇</button>
+</nav>
+</section>
+<section id="result" hidden aria-labelledby="result-title">
+<p id="result-mode" class="kicker"></p>
+<h2 id="result-title" tabindex="-1"></h2>
+<p id="interpretation"></p>
+<p id="boundary" class="notice"></p>
+<h3>四構面分數</h3>
+<div class="grid" id="scores"></div>
+<p id="differences"></p>
+<figure>
+<svg id="plot" viewBox="0 0 360 309" role="img" aria-labelledby="plot-title">
+<title id="plot-title"></title>
+<rect x="45" y="24" width="135" height="117" fill="#e7ede4"/>
+<rect x="180" y="24" width="135" height="117" fill="#e4eee9"/>
+<rect x="45" y="141" width="135" height="117" fill="#f6ece0"/>
+<rect x="180" y="141" width="135" height="117" fill="#e8edf4"/>
+<rect x="45" y="24" width="270" height="234" fill="none" stroke="#54716a"/>
+<path d="M45 141H315 M180 24V258" fill="none" stroke="#54716a"/>
+<g fill="#192a30" font-size="12" text-anchor="middle">
+<text x="111" y="48">調適型</text><text x="249" y="48">聚斂型</text>
+<text x="111" y="246">發散型</text><text x="249" y="246">同化型</text>
+<text x="45" y="275">−36</text><text x="180" y="275">0</text><text x="315" y="275">+36</text>
+<text x="180" y="299">AC − CE</text>
+<text x="25" y="28">+36</text><text x="25" y="145">0</text><text x="25" y="261">−36</text>
+<text x="12" y="141" transform="rotate(-90 12 141)">AE − RO</text>
+</g>
+<circle id="dot" r="6.5" fill="#125b50" stroke="#fff" stroke-width="2.5"/>
+</svg>
+<figcaption>以 0 為教學用分界。橫軸向右偏 AC、向左偏 CE。縱軸向上偏 AE、向下偏 RO。</figcaption>
+</figure>
+<h3>四種傳統偏好</h3>
+<div id="styles"></div>
+<nav aria-label="結果操作"><button id="print" class="primary">列印結果</button><button id="restart">重新測驗</button></nav>
+</section>
+</main>
+<footer><strong>非正式 KLSI。本測驗為自編題目，尚未驗證信度、效度及雙版本測量等值性。</strong> 結果限於課堂討論與自我反思，避免用於評量、篩選或跨版本比較。作答採相對排序，各構面分數彼此牽動。</footer>
+<script>
+"use strict";
+
+// 每對方括號內依序是一般版與護理版用語。敘述依 CE、RO、AC、AE 儲存。
+const items = [
+  ["初學[一項新的實作技能／一項新的護理技術]時，我通常會……",
+   "親手完成一次操作，留意操作當下的感受。",
+   "看完一次示範，再回想哪些操作細節最值得留意。",
+   "先弄清楚各步驟所依據的原則如何連在一起。",
+   "在[練習時／指導下練習時]改變一項操作細節，看看結果有何不同。"],
+  ["參與[課堂案例／臨床案例]討論時，我通常會……",
+   "聽[當事人／病人]用自己的話描述當時的經歷。",
+   "比對同學對同一段經過的不同解讀。",
+   "用學過的概念畫出案例中各因素的因果關係。",
+   "把討論中的做法放進[課堂演練／臨床模擬]，看看是否可行。"],
+  ["第一次接觸[資料視覺化工具／一台教學用醫療設備]時，我通常會……",
+   "在[示範檔／指導下的模擬情境]中親自體驗一次操作。",
+   "觀察示範者看到不同提示時如何回應，再回想各處差異。",
+   "先釐清輸入、處理與顯示結果之間的關係。",
+   "在[示範檔／核可的教學設定]中調整一個參數，觀察輸出是否如預期。"],
+  ["面對[小組合作卡關／複雜的照護案例]時，我通常會……",
+   "透過與[組員／案例中的模擬病人]直接交談，感受他眼前的困難。",
+   "回看事情如何發展，考慮是否漏看了哪個角度。",
+   "把相關因素整理成能解釋問題的概念圖。",
+   "在[小組活動／模擬情境]中試行一項調整，看看是否有改善。"],
+  ["完成[小組任務演練／團隊急救模擬]後，我通常會……",
+   "描述自己在演練當下看到、聽到與感受到的情況。",
+   "回看演練經過，想想自己當時有哪些地方沒留意到。",
+   "用[團隊協作／團隊急救]的原則解釋演練中的決策。",
+   "重演同一段情境，試試改變分工是否有幫助。"],
+  ["接觸[抽象的課堂概念／不熟悉的護理概念]時，我通常會……",
+   "從一段自己在[生活／實習]中經歷過的情境切入。",
+   "對照幾個例子，想想起初忽略了哪些差異。",
+   "把定義與相關概念整理成一張關係圖。",
+   "用一道新的[應用題／照護情境題]試試這個概念能否派上用場。"],
+  ["設計[校園宣導／病人衛教]活動時，我通常會……",
+   "和[活動對象／衛教對象]聊聊，聽他描述日常經驗。",
+   "觀察不同對象對同一段訊息的反應，再想想差異。",
+   "依照[溝通／衛教]原則，理清各段內容之間的邏輯。",
+   "試講兩種開場，看看哪一種能讓[聽眾／模擬病人]較容易復述重點。"],
+  ["[課堂實作／照護模擬]的結果出乎預期時，我通常會……",
+   "說出自己在現場親眼看到及直接感受到的情況。",
+   "按時間回顧經過，想想早先有哪些線索被忽略。",
+   "根據[課程原理／照護原理]推導可能造成這個結果的機制。",
+   "在[下一輪實作／下一輪模擬]只改一項做法，再比較結果。"],
+  ["準備[課程專題／護理專題]報告時，我通常會……",
+   "親自走訪或訪談，接觸與主題相關的人與情境。",
+   "比對不同人對同一現象的觀察，思考各自的視角。",
+   "用一張概念圖串連資料與核心論點。",
+   "把報告中的一個構想用到新的[課程案例／模擬照護案例]，看看是否可行。"],
+  ["學習新的[實驗操作／臨床照護]程序時，我通常會……",
+   "在指導下走過一次流程，感受每一步實際需要做什麼。",
+   "完整看過示範，回想各步驟在何處銜接。",
+   "分析每個關鍵步驟所依據的原則。",
+   "在[課堂練習／技能模擬]中試行自己的提示清單，看看能否減少遺漏。"],
+  ["參加[簡報表達／臨床溝通]工作坊時，我通常會……",
+   "加入角色扮演，體會[講者／護理人員]與對方互動的感受。",
+   "觀察同伴的演練，回想對方在哪些時刻改變反應。",
+   "把工作坊介紹的[表達／溝通]原則整理成一個架構。",
+   "用相同情境試講兩種說法，比較對方理解到的內容。"],
+  ["想知道自己是否掌握[新學的課堂內容／新學的護理內容]時，我通常會……",
+   "親身參與一次與所學有關的[課堂活動／照護模擬]，體會自己在情境中的反應。",
+   "對照自己前後兩次的觀察，回顧看法如何改變。",
+   "試著說明幾個關鍵概念為何彼此相關。",
+   "拿一個沒練過的[課堂任務／照護模擬任務]，測試自己能否運用所學。"]
+];
+const orders = ["0123","2310","1032","3201","1302","2031","0213","3120","3012","1203","2130","0321"];
+const dimensions = ["CE 具體經驗","RO 反思觀察","AC 抽象概念化","AE 主動實驗"];
+const modes = ["非護理專業","護理專業"];
+const styles = {
+  "發散型":"結合具體經驗與反思觀察，傾向從經歷出發，從不同角度理解同一情境。",
+  "同化型":"結合抽象概念化與反思觀察，傾向整理觀察所得，形成有條理的解釋。",
+  "聚斂型":"結合抽象概念化與主動實驗，傾向用概念提出做法，再透過實作檢驗。",
+  "調適型":"結合具體經驗與主動實驗，傾向投入情境，透過嘗試與回饋調整做法。"
+};
+const ranks = [4,3,2,1];
+const boundaryLimit = 3;
+const byId = id => document.getElementById(id);
+const localize = (value, version) => value.replace(/\[([^／\]]+)／([^\]]+)\]/g, (_, general, nursing) => version === 0 ? general : nursing);
+const complete = row => row.length === 4 && ranks.every(rank => row.includes(rank));
+
+function calculate(rows) {
+  if (rows.length !== items.length || !rows.every(complete)) throw new Error("排序不完整");
+  const totals = rows.reduce((sum, row) => sum.map((value, dim) => value + row[dim]), [0,0,0,0]);
+  return {totals, x:totals[2] - totals[0], y:totals[3] - totals[1]};
+}
+function classify(x, y) {
+  if (x === 0 || y === 0) return "";
+  if (x < 0) return y < 0 ? "發散型" : "調適型";
+  return y < 0 ? "同化型" : "聚斂型";
+}
+function assign(row, dimension, rank) {
+  if (row[dimension] === rank) {
+    row[dimension] = 0;
+    return true;
+  }
+  if (row.includes(rank)) return false;
+  row[dimension] = rank;
+  return true;
+}
+let mode = 0;
+let index = 0;
+let rows = [];
+
+function show(screen, heading) {
+  for (const id of ["home","quiz","result"]) byId(id).hidden = id !== screen;
+  byId(heading).focus();
+  window.scrollTo(0,0);
+}
+function start(version) {
+  mode = version;
+  index = 0;
+  rows = items.map(() => [0,0,0,0]);
+  renderQuestion();
+  show("quiz","question");
+}
+function updateQuestion() {
+  const count = rows.filter(complete).length;
+  byId("answered").textContent = "已完成 " + count + "／" + items.length + " 題";
+  byId("progress").value = count;
+  const row = rows[index];
+  for (const button of byId("options").querySelectorAll("button")) {
+    const dimension = Number(button.dataset.dimension);
+    const rank = Number(button.dataset.rank);
+    const selected = row[dimension] === rank;
+    button.setAttribute("aria-pressed", String(selected));
+    const occupied = !selected && row.includes(rank);
+    button.setAttribute("aria-disabled", String(occupied));
+    button.style.opacity = occupied ? ".48" : "";
+  }
+}
+function renderQuestion() {
+  const item = items[index];
+  byId("position").textContent = modes[mode] + "模式 · 第 " + (index + 1) + " 題";
+  byId("question").textContent = localize(item[0],mode);
+  byId("feedback").textContent = "";
+  byId("back").disabled = index === 0;
+  byId("next").textContent = index === items.length - 1 ? "查看結果" : "下一題";
+  byId("options").replaceChildren();
+  [...orders[index]].map(Number).forEach((dim, position) => {
+    const letter = "ABCD"[position];
+    const option = document.createElement("div");
+    option.className = "option";
+    const statement = document.createElement("div");
+    statement.id = "statement-" + position;
+    statement.textContent = letter + "．" + localize(item[dim + 1],mode);
+    const controls = document.createElement("div");
+    controls.className = "ranks";
+    controls.setAttribute("role","group");
+    controls.setAttribute("aria-labelledby",statement.id);
+    for (const rank of ranks) {
+      const button = document.createElement("button");
+      button.className = "rank";
+      button.textContent = String(rank);
+      button.dataset.dimension = dim;
+      button.dataset.rank = rank;
+      button.setAttribute("aria-label",letter + " 選項，" + rank + " 分");
+      button.addEventListener("click", () => {
+        byId("feedback").textContent = assign(rows[index],dim,rank)
+          ? "" : rank + " 分已用在另一個敘述。請先取消原來的選擇。";
+        updateQuestion();
+      });
+      controls.append(button);
+    }
+    option.append(statement,controls);
+    byId("options").append(option);
+  });
+  updateQuestion();
+}
+function move(target) {
+  index = target;
+  renderQuestion();
+  show("quiz","question");
+}
+function renderResult() {
+  const {totals,x,y} = calculate(rows);
+  const style = classify(x,y);
+  const near = [x,y].some(value => value !== 0 && Math.abs(value) <= boundaryLimit);
+  byId("result-mode").textContent = modes[mode] + "模式結果";
+  byId("result-title").textContent = style ? "本次偏好落在" + style + "象限" : "本次結果落在分界線上";
+  byId("interpretation").textContent = style ? styles[style] : "可參照分界線兩側的偏好解釋。若兩軸皆同分，可一併參考四種偏好。";
+  const notices = [];
+  if (x === 0 || y === 0) notices.push("同分：" + [x === 0 ? "AC 與 CE" : "", y === 0 ? "AE 與 RO" : ""].filter(Boolean).join("、") + "同分，暫不歸入單一象限。");
+  if (near) notices.push("接近分界：至少一軸的分差絕對值為 1 至 3 分，少量作答變動就可能改變象限。3 分為本測驗的教學提示門檻。");
+  byId("boundary").textContent = notices.join(" ");
+  byId("scores").innerHTML = totals.map((score,i) => '<div class="score">' + dimensions[i] + '<b>' + score + ' <small>／48</small></b></div>').join("");
+  const signed = value => value > 0 ? "+" + value : String(value);
+  const axes = "AC − CE = " + signed(x) + "；AE − RO = " + signed(y);
+  byId("differences").textContent = axes + "。各構面範圍 12–48 分，四項合計 120 分。";
+  byId("plot-title").textContent = "學習偏好座標，" + axes;
+  byId("dot").setAttribute("cx",180 + 135 * x / 36);
+  byId("dot").setAttribute("cy",141 - 117 * y / 36);
+  byId("styles").innerHTML = Object.entries(styles).map(([name,description]) => "<p><strong>" + name + "</strong>　" + description + "</p>").join("");
+  show("result","result-title");
+}
+for (const button of document.querySelectorAll("[data-mode]")) {
+  button.addEventListener("click", () => start(Number(button.dataset.mode)));
+}
+byId("back").addEventListener("click", () => move(index - 1));
+byId("next").addEventListener("click", () => {
+  if (!complete(rows[index])) {
+    byId("feedback").textContent = "請先為本題四個敘述分別選擇 4、3、2、1 分。";
+    return;
+  }
+  if (index === items.length - 1) renderResult();
+  else move(index + 1);
+});
+byId("clear").addEventListener("click", () => {
+  rows[index].fill(0);
+  byId("feedback").textContent = "已清除本題排序。";
+  updateQuestion();
+});
+byId("leave").addEventListener("click", () => {
+  if (rows.some(row => row.some(Boolean)) && !window.confirm("返回後將清除這次的作答。要繼續嗎？")) return;
+  rows = [];
+  show("home","home-title");
+});
+byId("restart").addEventListener("click", () => {
+  rows = [];
+  show("home","home-title");
+});
+byId("print").addEventListener("click", () => window.print());
+</script>
+</body>
+</html>
